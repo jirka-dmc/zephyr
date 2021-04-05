@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+CONFIG_BOARD_XMC47_RELAX_KIT=y
+CONFIG_SOC_SERIES_XMC_4XXX=y
+CONFIG_SOC_XMC4700=y
+CONFIG_CORTEX_M_SYSTICK=y
+CONFIG_ARM_MPU=y

@@ -8,5 +8,12 @@
 
 /* Add include for DTS generated information */
 #include <devicetree.h>
-#include <system_XMC4500.h>
-#include <XMC4500.h>
+#ifdef CONFIG_SOC_XMC4500
+    #include <system_XMC4500.h>
+    #include <XMC4500.h>
+#elif CONFIG_SOC_XMC4700
+    #include <system_XMC4700.h>
+    #include <XMC4700.h>
+    #include <xmc_scu.h>
+#endif
+

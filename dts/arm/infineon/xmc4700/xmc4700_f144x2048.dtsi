@@ -1,0 +1,15 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Devicetree specification for XMC4700-F144x2048 (pkg LQFP-144 x 2048kB flash)
+ *
+ * Author: Paige Trexel, DMC <paige.trexel@dmcinfo.com> 
+ */
+
+#include <infineon/xmc4700/xmc4700.dtsi>
+#include <infineon/pg_lqfp144.dtsi>
+
+ / { 
+
+ };
+

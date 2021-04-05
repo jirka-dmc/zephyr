@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2020 Linumiz
+ * Author: Parthiban Nallathambi <parthiban@linumiz.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <infineon/xmc4xxx.dtsi>
+
+/ {
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <144000000>;
+		#clock-cells = <0>;
+	};
+	
+
+	ccm: memory@1FFE8000 {
+		compatible = "xmc4xxx,xmc-ccm";
+		reg = <0x1FFE8000 DT_SIZE_K(96)>; 
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(128)>; 
+	};
+	
+	dtcm: memory@20020000 {
+		compatible = "arm,dtcm";
+		reg = <0x20020000 DT_SIZE_K(128)>; 
+	};
+
+	flash0: serial-flash@c000000 {
+		compatible = "serial-flash";
+	};
+
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <6>;
+};
+
+
+&flash0 {
+	reg = <0xc000000 DT_SIZE_M(1)>;
+};

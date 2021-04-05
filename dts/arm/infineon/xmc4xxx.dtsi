@@ -6,6 +6,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -18,64 +19,70 @@
 		};
 	};
 
-	/* TODO: Add psram1 & dsram2 to MEMORY layout of linker */
-	psram1: memory@10000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram1: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram2: memory@30000000 {
-		compatible = "mmio-sram";
-	};
-
-	flash0: serial-flash@c000000 {
-		compatible = "serial-flash";
-	};
-
-	sysclk: system-clock {
-		compatible = "fixed-clock";
-		clock-frequency = <120000000>;
-		#clock-cells = <0>;
+	aliases {
+		gpio-0 = &gpio0; 	
 	};
 
 	soc {
 		usic0ch0: usic@40030000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40030000 0x1ff>;
 			clocks = <&sysclk>;
 			status = "disabled";
+			interrupts = <84 0>, <85 0>;
+			interrupt-names = "SR0", "SR1";
 		};
 
 		usic0ch1: usic@40030200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40030200 0x1ff>;
 			clocks = <&sysclk>;
 			status = "disabled";
+			interrupts = <84 0>, <85 0>;
+			interrupt-names = "SR0", "SR1";
 		};
 
 		usic1ch0: usic@48020000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x48020000 0x1ff>;
 			clocks = <&sysclk>;
 			status = "disabled";
+			interrupts = <90 0>, <91 0>;
+			interrupt-names = "SR0", "SR1";
 		};
 
 		usic1ch1: usic@48020200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x48020200 0x1ff>;
 			clocks = <&sysclk>;
 			status = "disabled";
+			interrupts = <92 0>, <93 0>;
+			interrupt-names = "SR0", "SR1";
 		};
 
 		usic2ch0: usic@48024000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x48024000 0x1ff>;
 			clocks = <&sysclk>;
 			status = "disabled";
+			interrupts = <98 0>, <99 0>;
+			interrupt-names = "SR0", "SR1";
 		};
 
 		usic2ch1: usic@48024200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x48024200 0x1ff>;
 			clocks = <&sysclk>;
 			status = "disabled";
+			interrupts = <96 0>, <97 0>;
+			interrupt-names = "SR0", "SR1";
+		};
 		};
 	};
 };

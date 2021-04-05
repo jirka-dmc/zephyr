@@ -1,0 +1,29 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2020 Linumiz
+ * Author: Parthiban Nallathambi <parthiban@linumiz.com>
+ *
+ */
+
+/dts-v1/;
+
+#include <infineon/xmc4700/xmc4700_f144x2048.dtsi>
+
+/ {
+	model = "Infineon XMC4700 Relax Kit";
+	compatible = "infineon,xm4700-relax-kit", "infineon,xmc4700",
+                        "infineon,xmc4xxx";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,ccm = &ccm;
+		zephyr,flash = &flash0;
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <144000000>;
+};

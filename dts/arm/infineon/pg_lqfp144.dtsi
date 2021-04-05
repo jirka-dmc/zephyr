@@ -1,0 +1,57 @@
+#include <infineon/xmc4xxx.dtsi>
+
+/*
+ * Devicetree specificatins for the LQFP-144 package for the XMC4700/XMC4800
+ */
+
+/ { 
+
+};
+
+/* 
+ * Define pinmasks for this package
+ */
+&gpio0 {
+   pin-mask = <0xffff>;
+   status = "okay";
+};
+
+&gpio1 {
+   pin-mask = <0xffff>;
+   status = "okay";
+};
+
+&gpio2 {
+   pin-mask = <0xffff>;
+   status = "okay";
+};
+
+&gpio3 {
+   pin-mask = <0xffff>;
+   status = "okay";
+};
+
+&gpio4 {
+   pin-mask = <0x00ff>;
+   status = "okay";
+};
+
+&gpio5 {
+   pin-mask = <0x0fff>;
+   status = "okay";
+};
+
+&gpio6 {
+   pin-mask = <0x007f>;
+   status = "okay";
+};
+
+&gpio14 {
+   pin-mask = <0xf3ff>;
+   status = "okay";
+};
+
+&gpio15 {
+   pin-mask = <0xf3fc>;
+   status = "okay";
+};

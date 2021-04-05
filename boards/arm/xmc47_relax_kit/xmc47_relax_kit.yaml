@@ -1,0 +1,10 @@
+identifier: xmc47_relax_kit
+name: XMC47-RELAX-KIT
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 352
+flash: 2048
