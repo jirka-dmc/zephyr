@@ -374,7 +374,9 @@ static void process_rx_packet(struct k_work *work)
 
 	net_capture_pkt(net_pkt_iface(pkt), pkt);
 
+	NET_DBG("Start Processing pkt: %x", (uint32_t)pkt);
 	net_rx(net_pkt_iface(pkt), pkt);
+	NET_DBG("Done Processing pkt: %x", (uint32_t)pkt);
 }
 
 static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)

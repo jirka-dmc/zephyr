@@ -64,8 +64,10 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 	if (!icmp_hdr) {
 		return -ENOBUFS;
 	}
-
-	icmp_hdr->chksum = net_calc_chksum_icmpv4(pkt);
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		icmp_hdr->chksum = net_calc_chksum_icmpv4(pkt);
+	}
+	
 
 	return net_pkt_set_data(pkt, &icmpv4_access);
 }

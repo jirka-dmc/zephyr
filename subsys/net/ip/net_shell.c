@@ -4201,7 +4201,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 wait_reply:
-	ret = k_sem_take(&ping_timeout, K_SECONDS(2));
+	ret = k_sem_take(&ping_timeout, K_SECONDS(10));
 	if (ret == -EAGAIN) {
 		PR_INFO("Ping timeout\n");
 		remove_ipv6_ping_handler();

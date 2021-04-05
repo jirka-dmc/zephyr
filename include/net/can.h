@@ -117,7 +117,7 @@ BUILD_ASSERT(offsetof(struct net_can_api, iface_api) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 
-#define CANBUS_L2_CTX_TYPE	struct net_canbus_context *
+#define CANBUS_L2_CTX_TYPE	struct canbus_net_ctx
 
 /**
  * Context for canbus net device.
@@ -172,8 +172,8 @@ struct canbus_isotp_tx_ctx {
 	struct net_canbus_lladdr dest_addr;
 	/** Remaining data to transmit in bytes */
 	uint16_t rem_len;
-	/** Number of bytes in the tx queue */
-	int8_t tx_backlog;
+	/** Number of packets in the tx queue */
+	atomic_t tx_backlog;
 	/** State of the transmission */
 	uint8_t state;
 	/** Actual block number that is transmitted. Counts from BS to 0 */

@@ -2633,9 +2633,11 @@ static uint8_t get_diff_ipv6(const struct in6_addr *src,
 
 static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 {
-	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
-	    addr->address.family == AF_INET6 &&
-	    !net_ipv6_is_ll_addr(&addr->address.in6_addr)) {
+	bool b1 = addr->is_used;
+	bool b2 = addr->addr_state == NET_ADDR_PREFERRED;
+	bool b3 = addr->address.family == AF_INET6;
+	bool b4 = !net_ipv6_is_ll_addr(&addr->address.in6_addr);
+	if (b1 && b2 && b3 &&b4) {
 		return true;
 	}
 

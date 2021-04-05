@@ -38,7 +38,7 @@ extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 static struct canbus_l2_ctx l2_ctx;
 
 static struct k_work_q net_canbus_workq;
-K_KERNEL_STACK_DEFINE(net_canbus_stack, 512);
+K_KERNEL_STACK_DEFINE(net_canbus_stack, 2048);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);
 
@@ -91,8 +91,11 @@ static void canbus_tx_finish(struct net_pkt *pkt)
 static void canbus_rx_finish(struct net_pkt *pkt)
 {
 	struct canbus_isotp_rx_ctx *ctx = pkt->canbus_rx_ctx;
-
-	canbus_free_rx_ctx(ctx);
+	if (ctx)
+	{
+		canbus_free_rx_ctx(ctx);
+	}
+	pkt->canbus_rx_ctx=NULL;
 }
 
 static void canbus_tx_report_err(struct net_pkt *pkt)
@@ -184,9 +187,9 @@ static uint16_t canbus_get_dest_lladdr(struct net_pkt *pkt)
 
 static inline bool canbus_dest_is_mcast(struct net_pkt *pkt)
 {
-	uint16_t lladdr_be = UNALIGNED_GET((uint16_t *)net_pkt_lladdr_dst(pkt)->addr);
-
-	return (sys_be16_to_cpu(lladdr_be) & CAN_NET_IF_IS_MCAST_BIT);
+	uint16_t lladdr_be = canbus_get_dest_lladdr(pkt);
+	NET_DBG("canbus_dest_is_mcast: %x, %x",lladdr_be, lladdr_be & CAN_NET_IF_IS_MCAST_BIT);
+	return (lladdr_be & CAN_NET_IF_IS_MCAST_BIT);
 }
 
 static bool canbus_src_is_translator(struct net_pkt *pkt)
@@ -281,7 +284,7 @@ static struct canbus_isotp_rx_ctx *canbus_get_rx_ctx(uint8_t state,
 				break;
 			}
 
-			if (canbus_get_src_lladdr(ctx->pkt) == src_addr) {
+			if ((canbus_get_src_lladdr(ctx->pkt) == src_addr) && (state != NET_CAN_RX_STATE_UNUSED)) {
 				ret = ctx;
 				break;
 			}
@@ -682,18 +685,13 @@ static void canbus_tx_frame_isr(uint32_t err_flags, void *arg)
 {
 	struct net_pkt *pkt = (struct net_pkt *)arg;
 	struct canbus_isotp_tx_ctx *ctx = pkt->canbus_tx_ctx;
-
-	ctx->tx_backlog--;
-
-	if (ctx->state == NET_CAN_TX_STATE_WAIT_TX_BACKLOG) {
-		if (ctx->tx_backlog > 0) {
+	atomic_val_t ref;
+	do {
+		ref = atomic_get(&ctx->tx_backlog);
+		if (!ref) {
 			return;
 		}
-
-		ctx->state = NET_CAN_TX_STATE_FIN;
-	}
-
-	k_work_submit_to_queue(&net_canbus_workq, &pkt->work);
+	} while (!atomic_cas(&ctx->tx_backlog, ref, ref - 1));			
 }
 
 static inline int canbus_send_cf(struct net_pkt *pkt)
@@ -722,7 +720,7 @@ static inline int canbus_send_cf(struct net_pkt *pkt)
 		ctx->sn++;
 		ctx->rem_len -= len;
 		ctx->act_block_nr--;
-		ctx->tx_backlog++;
+		atomic_inc(&ctx->tx_backlog);
 	} else {
 		net_pkt_cursor_restore(pkt, &cursor_backup);
 	}
@@ -733,8 +731,8 @@ static inline int canbus_send_cf(struct net_pkt *pkt)
 }
 
 static void canbus_tx_work(struct net_pkt *pkt)
-{
-	int ret;
+{	
+	int ret = 0;
 	struct canbus_isotp_tx_ctx *ctx = pkt->canbus_tx_ctx;
 
 	NET_ASSERT(ctx);
@@ -742,18 +740,28 @@ static void canbus_tx_work(struct net_pkt *pkt)
 	switch (ctx->state) {
 	case NET_CAN_TX_STATE_SEND_CF:
 		do {
+			if ((ctx->rem_len==0))
+			{
+				// if done sending move on to finish
+				if (atomic_get(&ctx->tx_backlog)==0)
+				{
+					ctx->state = NET_CAN_TX_STATE_FIN;					
+				}
+				k_work_submit_to_queue(&net_canbus_workq, &pkt->work);
+				return;
+			}			
 			ret = canbus_send_cf(ctx->pkt);
-			if (!ret) {
-				ctx->state = NET_CAN_TX_STATE_WAIT_TX_BACKLOG;
-				break;
-			}
+			if (ret==0 || (ret == CAN_TIMEOUT))
+			{
+				k_work_submit_to_queue(&net_canbus_workq, &pkt->work);
+				return;
+			}			
 
 			if (ret < 0 && ret != CAN_TIMEOUT) {
 				NET_ERR("Failed to send CF. CTX: %p", ctx);
 				canbus_tx_report_err(pkt);
-				break;
+				return;
 			}
-
 			if (ctx->opts.bs && !ctx->is_mcast &&
 			    !ctx->act_block_nr) {
 				NET_DBG("BS reached. Wait for FC again. CTX: %p",
@@ -761,13 +769,15 @@ static void canbus_tx_work(struct net_pkt *pkt)
 				ctx->state = NET_CAN_TX_STATE_WAIT_FC;
 				z_add_timeout(&ctx->timeout, canbus_tx_timeout,
 					      NET_CAN_BS_TIME);
-				break;
+				k_work_submit_to_queue(&net_canbus_workq, &pkt->work);
+				return;
 			} else if (ctx->opts.stmin) {
+				NET_ERR("CAN Wait for ST Time. CTX: %p", ctx);
 				ctx->state = NET_CAN_TX_STATE_WAIT_ST;
-				break;
-			}
-		} while (ret > 0);
-
+				k_work_submit_to_queue(&net_canbus_workq, &pkt->work);
+				return;
+			}			
+		} while (ret > 0);				
 		break;
 
 	case NET_CAN_TX_STATE_WAIT_ST:
@@ -780,12 +790,12 @@ static void canbus_tx_work(struct net_pkt *pkt)
 	case NET_CAN_TX_STATE_ERR:
 		NET_DBG("SM handle error. CTX: %p", ctx);
 		canbus_tx_report_err(pkt);
-		break;
+		return;
 
 	case NET_CAN_TX_STATE_FIN:
 		canbus_tx_finish(ctx->pkt);
 		NET_DBG("SM finish. CTX: %p", ctx);
-		break;
+		return;
 
 	default:
 		break;
@@ -1056,7 +1066,10 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	mcast = net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst);
-	if (mcast || canbus_dest_is_mcast(pkt)) {
+	bool dest_is_mcast = canbus_dest_is_mcast(pkt);
+	if (mcast || dest_is_mcast) {
+		NET_DBG("Packet is multicast: %d, %d", mcast, dest_is_mcast);
+		mcast = true;
 		canbus_ipv6_mcast_to_dest(pkt, &dest_addr);
 	} else if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
 		   net_pkt_lladdr_dst(pkt)->type == NET_LINK_ETHERNET) {
@@ -1070,6 +1083,7 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 			lladdr->addr[3], lladdr->addr[4], lladdr->addr[5],
 			dest_addr.addr);
 	} else {
+		NET_DBG("Packet is unicast");
 		dest_addr.addr = canbus_get_dest_lladdr(pkt);
 	}
 

@@ -10,7 +10,7 @@
 #define LOG_LEVEL CONFIG_NET_BUF_LOG_LEVEL
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #include <stdio.h>
 #include <errno.h>
@@ -534,7 +534,8 @@ void net_buf_unref(struct net_buf *buf)
 			    buf->pool_id, buf->frags);
 
 		if (--buf->ref > 0) {
-			return;
+			buf = frags;
+			continue;
 		}
 
 		if (buf->__buf) {
