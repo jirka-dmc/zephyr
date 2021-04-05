@@ -1,0 +1,8 @@
+# Infineon
+
+config GPIO_XMC4XXX
+	depends on SOC_SERIES_XMC_4XXX
+	bool "XMC4XX GPIO driver"
+	depends on SOC_FAMILY_XMC && HAS_XMCLIB_GPIO
+	help
+	  This option enables the XMC4XX GPIO driver
