@@ -1,0 +1,9 @@
+# Infineon
+
+config EXTI_XMC4XXX
+	bool "External Interrupt Controller (EXTI) Driver for Infineon XMC4XXX series devices"
+	default y
+	depends on SOC_FAMILY_XMC
+	help
+	  Enable EXTI driver for XMC4XXX series of devices.  This is required for
+	  GPIO interrupt support.
